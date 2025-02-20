@@ -99,7 +99,7 @@ def login_page():
         st.markdown("---")
         st.markdown(
             "<div style='text-align: center; color: #d1f7ff;'>"
-            "© 2024 Network Scanner. All rights reserved.<br>"
+            "© 2025 Network Scanner. All rights reserved.<br>"
             "</div>", 
             unsafe_allow_html=True
         )
@@ -115,7 +115,7 @@ def login_page():
                 st.rerun()
 
     if st.session_state.logged_in:
-        st.switch_page("scanner")
+        st.switch_page("pages/scanner.py")
 
     if 'page' in st.session_state:
         if st.session_state.page == "privacy_policy":

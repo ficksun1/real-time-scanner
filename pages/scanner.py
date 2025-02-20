@@ -1,165 +1,209 @@
 import streamlit as st
-import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-from scapy.all import IP, TCP, UDP, sniff
-from collections import defaultdict
-import time
-from datetime import datetime, timedelta
-import threading
-import logging
-from typing import Dict, List, Optional, Tuple
+import nmap
 import socket
-import geoip2.database
-from dataclasses import dataclass
-from auth import AuthManager
+import pandas as pd
+from datetime import datetime
+import threading
+import queue
+import ipaddress
 
-# Set page config
-st.set_page_config(page_title="Network Traffic Analysis", layout="wide")
-
-# Database configuration
-DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': 'kali',
-    'database': 'network_scanner'
-}
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    filename='network_scanner.log'
+# Page configuration
+st.set_page_config(
+    page_title="Network Scanner Dashboard",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
-logger = logging.getLogger(__name__)
 
-@dataclass
-class NetworkConfig:
-    """Configuration settings for network scanning"""
-    max_packets: int = 10000
-    cleanup_interval: int = 60
-    data_retention_period: int = 300
-    rate_limit: int = 1000
-    interface: str = None
-    packet_filter: str = "ip"
+# Initialize session state
+if 'scan_results' not in st.session_state:
+    st.session_state.scan_results = []
+if 'scan_history' not in st.session_state:
+    st.session_state.scan_history = []
+if 'is_scanning' not in st.session_state:
+    st.session_state.is_scanning = False
 
-class PacketProcessor:
-    """Process and analyze network packets"""
-    def __init__(self, user_id: int, config: NetworkConfig):
-        self.user_id = user_id
-        self.config = config
-        self.protocol_map = {1: 'ICMP', 6: 'TCP', 17: 'UDP'}
-        self.packet_data = []
-        self.start_time = datetime.now()
-        self.packet_count = 0
-        self.lock = threading.Lock()
-        self.db_manager = AuthManager()
-        self.last_cleanup = time.time()
-        self.packet_rates = defaultdict(int)
+def get_local_ip():
+    """Get the local IP address of the machine"""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except:
+        return "127.0.0.1"
+
+def validate_ip_range(ip_range):
+    """Validate IP address or range"""
+    try:
+        ipaddress.ip_network(ip_range, strict=False)
+        return True
+    except ValueError:
+        return False
+
+def perform_scan(target, scan_type, result_queue):
+    """Perform the network scan"""
+    try:
+        nm = nmap.PortScanner()
         
-        try:
-            self.geo_reader = geoip2.database.Reader('GeoLite2-City.mmdb')
-        except Exception as e:
-            logger.error(f"Failed to load GeoIP database: {e}")
-            self.geo_reader = None
-
-    def process_packet(self, packet) -> None:
-        """Process a single packet and extract relevant information"""
-        try:
-            if IP in packet:
-                current_time = datetime.now()
-                
-                if self.check_rate_limit():
-                    return
-
-                with self.lock:
-                    packet_info = {
-                        'timestamp': current_time,
-                        'source': packet[IP].src,
-                        'destination': packet[IP].dst,
-                        'protocol': self.get_protocol_name(packet[IP].proto),
-                        'size': len(packet),
-                        'time_relative': (current_time - self.start_time).total_seconds()
-                    }
-
-                    if TCP in packet:
-                        packet_info.update({
-                            'src_port': packet[TCP].sport,
-                            'dst_port': packet[TCP].dport
-                        })
-                    elif UDP in packet:
-                        packet_info.update({
-                            'src_port': packet[UDP].sport,
-                            'dst_port': packet[UDP].dport
-                        })
-
-                    self.packet_data.append(packet_info)
-                    self.packet_count += 1
-                    self.periodic_cleanup()
-
-        except Exception as e:
-            logger.error(f"Error processing packet: {str(e)}")
-
-    def get_protocol_name(self, protocol_num: int) -> str:
-        return self.protocol_map.get(protocol_num, f'OTHER({protocol_num})')
-
-    def get_dataframe(self) -> pd.DataFrame:
-        with self.lock:
-            if not self.packet_data:
-                return pd.DataFrame(columns=[
-                    'timestamp', 'source', 'destination', 'protocol',
-                    'size', 'src_port', 'dst_port', 'time_relative'
-                ])
-            return pd.DataFrame(self.packet_data)
-
-def create_sidebar():
-    with st.sidebar:
-        logo_url = "https://cdn-icons-png.flaticon.com/512/2526/2526190.png"
-        try:
-            st.image(logo_url, width=100)
-        except Exception:
-            st.title("Scanner")
+        # Define scan arguments based on scan type
+        if scan_type == "Quick Scan":
+            args = "-sn"  # Ping scan
+        elif scan_type == "Basic Port Scan":
+            args = "-sS -F"  # SYN scan on common ports
+        else:  # Detailed Scan
+            args = "-sS -sV -F"  # Remove -O flag as it requires root/sudo
         
-        st.divider()
-        st.header("Network Scanner")
-        st.subheader("User Profile")
-        st.write(f"Welcome, {st.session_state.username}")
+        # Perform the scan
+        nm.scan(hosts=target, arguments=args)
         
-        page = st.radio(
-            "Select Page",
-            ["Live Traffic", "Port Scanner", "Network Education", "Settings"]
-        )
-        
-        refresh_rate = st.slider("Refresh Rate (seconds)", 1, 10, 2)
-        max_packets = st.slider("Max Packets", 100, 1000, 200)
-        
-        if st.button("Logout"):
-            handle_logout()
+        results = []
+        for host in nm.all_hosts():
+            host_info = {
+                'IP Address': host,
+                'Status': nm[host].state(),
+                'Hostname': nm[host].hostname(),
+                'Ports': [],
+                'Services': [],
+                'OS': 'Not Available'  # Default value instead of accessing osmatch
+            }
             
-        return page, refresh_rate, max_packets
-
-def handle_logout():
-    for key in list(st.session_state.keys()):
-        del st.session_state[key]
-    st.rerun()
+            if 'tcp' in nm[host]:
+                for port, port_info in nm[host]['tcp'].items():
+                    host_info['Ports'].append(port)
+                    service_info = f"{port_info['name']} ({port_info.get('version', 'unknown')})"
+                    host_info['Services'].append(service_info)
+            
+            results.append(host_info)
+        
+        result_queue.put(results)
+    except Exception as e:
+        result_queue.put(f"Error during scan: {str(e)}")
 
 def main():
-    if 'logged_in' not in st.session_state or not st.session_state.logged_in:
-        st.error("Please login first")
-        st.stop()
-
-    if 'processor' not in st.session_state:
-        processor = PacketProcessor(st.session_state.user_id, NetworkConfig())
-        st.session_state.processor = processor
-        st.session_state.start_time = time.time()
-
-    page, refresh_rate, max_packets = create_sidebar()
+    st.title("Network Security Scanner")
     
-    if page == "Live Traffic":
-        df = st.session_state.processor.get_dataframe()
-        # Display live traffic visualization here
-        time.sleep(refresh_rate)
-        st.rerun()
+    # Sidebar for scan controls
+    with st.sidebar:
+        st.header("Scan Settings")
+        
+        # Get local IP for default value
+        local_ip = get_local_ip()
+        target = st.text_input("Target IP/Range", value=f"{local_ip}/24")
+        
+        scan_type = st.selectbox(
+            "Scan Type",
+            ["Quick Scan", "Basic Port Scan", "Detailed Scan"]
+        )
+        
+        st.info("""
+        Scan Types:
+        - Quick Scan: Basic host discovery
+        - Basic Port Scan: Common ports check
+        - Detailed Scan: Full service detection
+        """)
+        
+        start_scan = st.button("Start Scan", type="primary")
+    
+    # Main content area with tabs
+    tab1, tab2 = st.tabs(["Current Scan", "Scan History"])
+    
+    with tab1:
+        if start_scan:
+            if not validate_ip_range(target):
+                st.error("Invalid IP address or range")
+            else:
+                st.session_state.is_scanning = True
+                result_queue = queue.Queue()
+                
+                # Start scan in separate thread
+                scan_thread = threading.Thread(
+                    target=perform_scan,
+                    args=(target, scan_type, result_queue)
+                )
+                scan_thread.start()
+                
+                # Progress indicator
+                with st.spinner("Scanning in progress..."):
+                    scan_thread.join()
+                    
+                    try:
+                        results = result_queue.get(timeout=1)
+                        if isinstance(results, str) and "Error" in results:
+                            st.error(results)
+                        else:
+                            # Store results in session state
+                            scan_record = {
+                                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                'target': target,
+                                'type': scan_type,
+                                'results': results
+                            }
+                            st.session_state.scan_results = results
+                            st.session_state.scan_history.append(scan_record)
+                            st.success("Scan completed successfully!")
+                            
+                            # Display results
+                            if results:
+                                for host in results:
+                                    with st.expander(f"Host: {host['IP Address']} ({host['Status']})"):
+                                        col1, col2 = st.columns(2)
+                                        with col1:
+                                            st.write("**Hostname:**", host['Hostname'])
+                                            st.write("**Operating System:**", host['OS'])
+                                        with col2:
+                                            st.write("**Open Ports:**", ', '.join(map(str, host['Ports'])) if host['Ports'] else "None")
+                                        
+                                        if host['Services']:
+                                            st.write("**Services:**")
+                                            for service in host['Services']:
+                                                st.write(f"- {service}")
+                            else:
+                                st.warning("No hosts found in the specified range")
+                    except queue.Empty:
+                        st.error("Scan timed out")
+                
+                st.session_state.is_scanning = False
+        
+        elif st.session_state.scan_results:
+            # Display last scan results
+            for host in st.session_state.scan_results:
+                with st.expander(f"Host: {host['IP Address']} ({host['Status']})"):
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.write("**Hostname:**", host['Hostname'])
+                        st.write("**Operating System:**", host['OS'])
+                    with col2:
+                        st.write("**Open Ports:**", ', '.join(map(str, host['Ports'])) if host['Ports'] else "None")
+                    
+                    if host['Services']:
+                        st.write("**Services:**")
+                        for service in host['Services']:
+                            st.write(f"- {service}")
+    
+    with tab2:
+        if st.session_state.scan_history:
+            for scan in reversed(st.session_state.scan_history):
+                with st.expander(f"Scan at {scan['timestamp']} - {scan['target']} ({scan['type']})"):
+                    for host in scan['results']:
+                        st.markdown(f"### {host['IP Address']} ({host['Status']})")
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.write("**Hostname:**", host['Hostname'])
+                            st.write("**Operating System:**", host['OS'])
+                        with col2:
+                            st.write("**Open Ports:**", ', '.join(map(str, host['Ports'])) if host['Ports'] else "None")
+                        
+                        if host['Services']:
+                            st.write("**Services:**")
+                            for service in host['Services']:
+                                st.write(f"- {service}")
+        else:
+            st.info("No scan history available")
+
+    # Footer
+    st.markdown("---")
+    st.caption("Network Scanner Dashboard - Use responsibly and only on authorized networks")
 
 if __name__ == "__main__":
     main()
