@@ -1,0 +1,70 @@
+<div class="main-header">
+    <div class="logo-container">
+        <svg width="150" height="150" viewBox="0 0 200 200">
+            <defs>
+                <linearGradient id="cyber-gradient-header" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#ff2a6d">
+                        <animate attributeName="stop-color" values="#ff2a6d;#05d9e8;#ff2a6d" dur="4s" repeatCount="indefinite" />
+                    </stop>
+                    <stop offset="100%" stop-color="#05d9e8">
+                        <animate attributeName="stop-color" values="#05d9e8;#ff2a6d;#05d9e8" dur="4s" repeatCount="indefinite" />
+                    </stop>
+                </linearGradient>
+            </defs>
+            
+            <!-- Outer Ring -->
+            <circle cx="100" cy="100" r="90" fill="none" stroke="url(#cyber-gradient-header)" stroke-width="4">
+                <animate attributeName="stroke-dasharray" from="0,565.48" to="565.48,565.48" dur="2s" />
+            </circle>
+            
+            <!-- Inner Hexagon -->
+            <path d="M100,40 L140,70 L140,130 L100,160 L60,130 L60,70 Z" fill="none" stroke="url(#cyber-gradient-header)" stroke-width="3">
+                <animate attributeName="stroke-dasharray" from="0,480" to="480,480" dur="2s" />
+            </path>
+            
+            <!-- Center Shield -->
+            <path d="M100,70 L120,90 L120,120 L100,140 L80,120 L80,90 Z" fill="none" stroke="#ff71ce" stroke-width="2">
+                <animate attributeName="stroke-dasharray" values="0,240;240,0" dur="2s" />
+            </path>
+            
+            <!-- Scanning Line -->
+            <line x1="60" y1="100" x2="140" y2="100" stroke="#00ff9f" stroke-width="2">
+                <animate attributeName="y1" values="60;140;60" dur="3s" repeatCount="indefinite" />
+                <animate attributeName="y2" values="60;140;60" dur="3s" repeatCount="indefinite" />
+            </line>
+        </svg>
+    </div>
+    <h1 class="cyber-title" style="text-align: center; font-size: 2.8em; margin-top: 1rem; text-transform: uppercase; letter-spacing: 3px;">
+        Network Security Scanner
+    </h1>
+    <div class="cyber-line"></div>
+</div>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&display=swap');
+
+.cyber-title {
+    color: #ff2a6d;
+    text-shadow: 0 0 10px rgba(255, 42, 109, 0.5),
+                 0 0 20px rgba(255, 42, 109, 0.3),
+                 0 0 30px rgba(255, 42, 109, 0.1);
+    font-family: 'Orbitron', sans-serif;
+    animation: glitch 3s infinite;
+}
+
+.logo-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+@keyframes glitch {
+    0% { transform: skew(0deg); }
+    20% { transform: skew(2deg); }
+    40% { transform: skew(-2deg); }
+    60% { transform: skew(1deg); }
+    80% { transform: skew(-1deg); }
+    100% { transform: skew(0deg); }
+}
+</style> 

@@ -1,0 +1,25 @@
+# Virtual Environment
+venv/
+env/
+streamlit-env/
+path/
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+
+# Database
+*.db
+*.sqlite3
+
+# Environment variables
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# System files
+.DS_Store
+Thumbs.db 
