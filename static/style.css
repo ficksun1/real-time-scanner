@@ -358,4 +358,39 @@
 
 .stTabs [aria-selected="true"] {
     color: var(--primary-color) !important;
+}
+
+/* Add these styles for policy pages */
+.policy-content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+    background: rgba(1, 1, 43, 0.7);
+    border-radius: 15px;
+    border: 1px solid var(--primary-color);
+    box-shadow: 0 0 20px rgba(255, 42, 109, 0.2);
+}
+
+.policy-content h2 {
+    color: var(--primary-color);
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+.policy-content p, .policy-content li {
+    color: var(--text-light);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+.policy-content ul {
+    margin-left: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Add hover effect for footer links */
+a:hover {
+    color: var(--secondary-color) !important;
+    text-shadow: 0 0 8px var(--secondary-color);
+    transition: all 0.3s ease;
 } 

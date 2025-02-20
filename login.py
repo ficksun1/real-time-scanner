@@ -25,6 +25,14 @@ def init_style():
     with open('static/style.css') as f:
         st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
+def nav_to_privacy():
+    st.session_state.nav = 'privacy'
+    st.rerun()
+
+def nav_to_terms():
+    st.session_state.nav = 'terms'
+    st.rerun()
+
 def login_page():
     init_style()
     
@@ -95,32 +103,40 @@ def login_page():
                     handle_registration(new_username, new_email, new_password, 
                                      confirm_password, terms, auth_manager)
 
-        # Footer
+        # Footer with links
         st.markdown("---")
-        st.markdown(
-            "<div style='text-align: center; color: #d1f7ff;'>"
-            "© 2025 Network Scanner. All rights reserved.<br>"
-            "</div>", 
-            unsafe_allow_html=True
-        )
         
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("Privacy Policy", type="secondary"):
-                st.session_state.page = "privacy_policy"
-                st.rerun()
+        # Center column for footer content
+        col1, col2, col3 = st.columns([1,2,1])
         with col2:
-            if st.button("Terms of Service", type="secondary"):
-                st.session_state.page = "terms"
-                st.rerun()
+            st.markdown(
+                "<div style='text-align: center; color: #d1f7ff;'>"
+                "© 2025 Network Scanner. All rights reserved.</div>",
+                unsafe_allow_html=True
+            )
+            
+            # Simple horizontal layout for links
+            st.markdown(
+                "<div style='display: flex; justify-content: center; gap: 20px; margin-top: 10px;'>"
+                "<button onclick='nav_to_privacy()' style='background: none; border: none; color: #05d9e8; cursor: pointer;'>Privacy Policy</button>"
+                "<span style='color: #05d9e8;'>•</span>"
+                "<button onclick='nav_to_terms()' style='background: none; border: none; color: #05d9e8; cursor: pointer;'>Terms of Service</button>"
+                "</div>",
+                unsafe_allow_html=True
+            )
 
-    if st.session_state.logged_in:
-        st.switch_page("pages/scanner.py")
+        if st.session_state.logged_in:
+            st.switch_page("pages/scanner.py")
 
-    if 'page' in st.session_state:
-        if st.session_state.page == "privacy_policy":
+        # Handle navigation
+        if 'nav' not in st.session_state:
+            st.session_state.nav = None
+
+        if st.session_state.nav == 'privacy':
+            st.session_state.nav = None
             st.switch_page("pages/privacy_policy.py")
-        elif st.session_state.page == "terms":
+        elif st.session_state.nav == 'terms':
+            st.session_state.nav = None
             st.switch_page("pages/terms.py")
 
 def handle_login(username, password, remember_me, auth_manager, cookie_manager):

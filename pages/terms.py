@@ -1,33 +1,53 @@
 import streamlit as st
 
-def terms_page():
-    st.title("Terms and Conditions")
+# Page config
+st.set_page_config(
+    page_title="Terms of Service",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+def init_style():
+    """Initialize custom styling"""
+    with open('static/style.css') as f:
+        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+
+def terms_of_service():
+    init_style()
+    
+    st.title("Terms of Service")
     
     st.markdown("""
-    ## 1. Acceptance of Terms
-    By accessing and using the Network Security Scanner, you agree to be bound by these Terms and Conditions.
+    <div class="policy-content">
+        <h2>1. Acceptance of Terms</h2>
+        <p>By accessing our service, you agree to these terms and conditions.</p>
+
+        <h2>2. Use License</h2>
+        <p>This tool should only be used on networks you own or have explicit permission to scan.</p>
+
+        <h2>3. Disclaimer</h2>
+        <ul>
+            <li>The service is provided "as is" without warranties</li>
+            <li>We are not responsible for any damages from use of the service</li>
+            <li>Network scanning should comply with all applicable laws</li>
+        </ul>
+
+        <h2>4. Limitations</h2>
+        <p>You agree not to:</p>
+        <ul>
+            <li>Use the service for illegal purposes</li>
+            <li>Scan networks without authorization</li>
+            <li>Attempt to breach or bypass security measures</li>
+        </ul>
+
+        <h2>5. Governing Law</h2>
+        <p>These terms shall be governed by and construed in accordance with applicable laws.</p>
+    </div>
+    """, unsafe_allow_html=True)
     
-    ## 2. Use License
-    Permission is granted to temporarily use the Network Security Scanner for personal, non-commercial transitory viewing only.
-    
-    ## 3. User Responsibilities
-    - You must use the scanner responsibly and ethically
-    - You agree to scan only networks you have permission to test
-    - You will not use the tool for malicious purposes
-    
-    ## 4. Disclaimer
-    The tool is provided "as is" without warranties of any kind.
-    
-    ## 5. Limitations
-    We shall not be held liable for any damages arising from the use of the tool.
-    
-    ## 6. Revisions
-    We reserve the right to update these terms at any time.
-    """)
-    
-    if st.button("Back to Login"):
-        st.session_state.pop('page', None)  # Clear the page state
+    # Back button
+    if st.button("← Back to Login"):
         st.switch_page("login.py")
 
 if __name__ == "__main__":
-    terms_page() 
+    terms_of_service() 
