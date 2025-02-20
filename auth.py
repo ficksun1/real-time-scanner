@@ -19,7 +19,7 @@ class DatabaseManager:
             conn = self.get_connection()
             cursor = conn.cursor()
             
-            # Create users table if it doesn't exist
+            # Create users table
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS users (
                     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -27,6 +27,26 @@ class DatabaseManager:
                     password VARCHAR(255) NOT NULL,
                     email VARCHAR(255) UNIQUE NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            # Drop existing packet_data table if exists
+            cursor.execute('DROP TABLE IF EXISTS packet_data')
+            
+            # Create packet_data table with correct columns
+            cursor.execute('''
+                CREATE TABLE packet_data (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    scan_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    ip_address VARCHAR(255) NOT NULL,
+                    scan_type VARCHAR(50) NOT NULL,
+                    status VARCHAR(50),
+                    hostname VARCHAR(255),
+                    ports TEXT,
+                    services TEXT,
+                    os_info VARCHAR(255),
+                    FOREIGN KEY (user_id) REFERENCES users(id)
                 )
             ''')
             
@@ -75,6 +95,35 @@ class DatabaseManager:
         except Exception as e:
             print(f"Error verifying user: {str(e)}")
             return None
+
+    def save_scan_result(self, user_id, target, scan_type, host_info):
+        """Save scan results to database"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                INSERT INTO packet_data 
+                (user_id, ip_address, scan_type, status, hostname, ports, services, os_info)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            ''', (
+                user_id,
+                host_info['IP Address'],
+                scan_type,
+                host_info['Status'],
+                host_info['Hostname'],
+                ','.join(map(str, host_info['Ports'])),
+                ','.join(host_info['Services']),
+                host_info['OS']
+            ))
+            
+            conn.commit()
+            cursor.close()
+            conn.close()
+            return True
+        except Exception as e:
+            print(f"Error saving scan result: {str(e)}")
+            return False
 
 class AuthManager:
     def __init__(self):

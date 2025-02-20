@@ -6,6 +6,7 @@ from datetime import datetime
 import threading
 import queue
 import ipaddress
+from auth import DatabaseManager  # Add this import
 
 # Page configuration
 st.set_page_config(
@@ -80,6 +81,20 @@ def perform_scan(target, scan_type, result_queue):
     except Exception as e:
         result_queue.put(f"Error during scan: {str(e)}")
 
+def save_scan_results(results, target, scan_type):
+    """Save scan results to database"""
+    if 'user_id' not in st.session_state:
+        return
+    
+    db = DatabaseManager()
+    for host_info in results:
+        db.save_scan_result(
+            st.session_state.user_id,
+            target,
+            scan_type,
+            host_info
+        )
+
 def main():
     st.title("Network Security Scanner")
     
@@ -141,6 +156,10 @@ def main():
                             }
                             st.session_state.scan_results = results
                             st.session_state.scan_history.append(scan_record)
+                            
+                            # Save results to database
+                            save_scan_results(results, target, scan_type)
+                            
                             st.success("Scan completed successfully!")
                             
                             # Display results
