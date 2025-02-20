@@ -30,12 +30,9 @@ class DatabaseManager:
                 )
             ''')
             
-            # Drop existing packet_data table if exists
-            cursor.execute('DROP TABLE IF EXISTS packet_data')
-            
-            # Create packet_data table with correct columns
+            # Create packet_data table with correct columns (without dropping)
             cursor.execute('''
-                CREATE TABLE packet_data (
+                CREATE TABLE IF NOT EXISTS packet_data (
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     user_id INT NOT NULL,
                     scan_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
