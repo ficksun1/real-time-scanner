@@ -106,24 +106,21 @@ def login_page():
         # Footer with links
         st.markdown("---")
         
-        # Center column for footer content
-        col1, col2, col3 = st.columns([1,2,1])
+        # Center-align the copyright and links
+        st.markdown(
+            "<div style='text-align: center; color: #d1f7ff;'>"
+            "© 2025 Network Scanner. All rights reserved.</div>",
+            unsafe_allow_html=True
+        )
+        
+        # Create centered links
+        col1, col2, col3 = st.columns([2,1,2])
         with col2:
-            st.markdown(
-                "<div style='text-align: center; color: #d1f7ff;'>"
-                "© 2025 Network Scanner. All rights reserved.</div>",
-                unsafe_allow_html=True
-            )
-            
-            # Simple horizontal layout for links
-            st.markdown(
-                "<div style='display: flex; justify-content: center; gap: 20px; margin-top: 10px;'>"
-                "<button onclick='nav_to_privacy()' style='background: none; border: none; color: #05d9e8; cursor: pointer;'>Privacy Policy</button>"
-                "<span style='color: #05d9e8;'>•</span>"
-                "<button onclick='nav_to_terms()' style='background: none; border: none; color: #05d9e8; cursor: pointer;'>Terms of Service</button>"
-                "</div>",
-                unsafe_allow_html=True
-            )
+            if st.button("Privacy Policy", key="privacy_link", use_container_width=True):
+                st.switch_page("pages/privacy_policy.py")
+            st.write("")  # Add some spacing
+            if st.button("Terms of Service", key="terms_link", use_container_width=True):
+                st.switch_page("pages/terms.py")
 
         if st.session_state.logged_in:
             st.switch_page("pages/scanner.py")

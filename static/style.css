@@ -276,7 +276,7 @@
 /* Login Form Styling */
 .stTextInput input, .stTextInput textarea {
     color: #ffffff !important;  /* Text color */
-    background-color: rgba(1, 1, 43, 0.7) !important;
+    background-color: rgba(72, 71, 70, 0.7) !important;
     border: 1px solid var(--primary-color) !important;
     border-radius: 5px !important;
 }
@@ -428,4 +428,59 @@ a:hover {
 .js-plotly-plot .plotly .ytitle {
     font-family: 'Orbitron', sans-serif !important;
     fill: var(--text-light) !important;
+}
+
+/* Footer button styling */
+div[data-testid="stHorizontalBlock"] button {
+    background: none !important;
+    border: none !important;
+    color: #05d9e8 !important;
+    font-size: 0.9em !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: 0 !important;
+    line-height: 1.5 !important;
+    transition: all 0.3s ease !important;
+}
+
+div[data-testid="stHorizontalBlock"] button:hover {
+    color: var(--primary-color) !important;
+    text-shadow: 0 0 8px var(--primary-color) !important;
+    background: none !important;
+}
+
+/* Remove button hover background */
+div[data-testid="stHorizontalBlock"] button::after {
+    display: none !important;
+}
+
+/* Footer link styling */
+.stMarkdown a {
+    color: #05d9e8 !important;
+    text-decoration: none !important;
+    transition: all 0.3s ease !important;
+    position: relative !important;
+}
+
+.stMarkdown a:hover {
+    color: var(--primary-color) !important;
+    text-shadow: 0 0 8px var(--primary-color) !important;
+}
+
+.stMarkdown a:after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 1px;
+    bottom: -2px;
+    left: 0;
+    background-color: var(--primary-color);
+    transform: scaleX(0);
+    transform-origin: bottom right;
+    transition: transform 0.3s ease;
+}
+
+.stMarkdown a:hover:after {
+    transform: scaleX(1);
+    transform-origin: bottom left;
 } 
