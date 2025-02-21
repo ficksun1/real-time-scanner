@@ -95,10 +95,8 @@ def save_scan_results(results, target, scan_type):
             host_info
         )
 
-def main():
-    st.title("Network Security Scanner")
-    
-    # Sidebar for scan controls
+def create_sidebar():
+    """Create and return sidebar elements"""
     with st.sidebar:
         st.header("Scan Settings")
         
@@ -119,6 +117,20 @@ def main():
         """)
         
         start_scan = st.button("Start Scan", type="primary")
+        
+        st.markdown("---")
+        if st.button("👤 Profile", key="profile"):
+            st.switch_page("pages/profile.py")
+        if st.button("🚪 Logout", key="logout"):
+            handle_logout()
+            
+        return target, scan_type, start_scan
+
+def main():
+    st.title("Network Security Scanner")
+    
+    # Get sidebar elements
+    target, scan_type, start_scan = create_sidebar()
     
     # Main content area with tabs
     tab1, tab2 = st.tabs(["Current Scan", "Scan History"])

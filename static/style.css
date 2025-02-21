@@ -393,4 +393,27 @@ a:hover {
     color: var(--secondary-color) !important;
     text-shadow: 0 0 8px var(--secondary-color);
     transition: all 0.3s ease;
+}
+
+/* Graph container styling */
+.stPlotlyChart {
+    background: rgba(1, 1, 43, 0.7) !important;
+    border-radius: 15px !important;
+    border: 1px solid var(--primary-color) !important;
+    padding: 1rem !important;
+    margin: 1rem 0 !important;
+    box-shadow: 0 0 20px rgba(255, 42, 109, 0.2) !important;
+}
+
+/* Graph title styling */
+.js-plotly-plot .plotly .gtitle {
+    font-family: 'Orbitron', sans-serif !important;
+    fill: var(--primary-color) !important;
+}
+
+/* Axis labels styling */
+.js-plotly-plot .plotly .xtitle,
+.js-plotly-plot .plotly .ytitle {
+    font-family: 'Orbitron', sans-serif !important;
+    fill: var(--text-light) !important;
 } 
