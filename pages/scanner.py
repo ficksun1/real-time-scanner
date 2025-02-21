@@ -95,6 +95,16 @@ def save_scan_results(results, target, scan_type):
             host_info
         )
 
+def handle_logout():
+    """Handle user logout"""
+    # Clear session state
+    for key in ['logged_in', 'username', 'user_id', 'token']:
+        if key in st.session_state:
+            del st.session_state[key]
+    
+    # Redirect to login page
+    st.switch_page("login.py")
+
 def create_sidebar():
     """Create and return sidebar elements"""
     with st.sidebar:

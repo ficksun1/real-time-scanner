@@ -273,16 +273,37 @@
     animation: glitch 3s infinite;
 }
 
-/* Adjust form elements */
-.stTextInput > div > div > input {
-    color: var(--text-light) !important;
+/* Login Form Styling */
+.stTextInput input, .stTextInput textarea {
+    color: #ffffff !important;  /* Text color */
     background-color: rgba(1, 1, 43, 0.7) !important;
     border: 1px solid var(--primary-color) !important;
+    border-radius: 5px !important;
 }
 
-.stSelectbox > div > div > div {
-    color: var(--text-light) !important;
+/* Placeholder text color */
+.stTextInput input::placeholder {
+    color: rgba(255, 42, 109, 0.7) !important;  /* Red placeholder text */
+}
+
+/* Text Input Focus State */
+.stTextInput input:focus {
+    border-color: var(--secondary-color) !important;
+    box-shadow: 0 0 10px rgba(5, 217, 232, 0.3) !important;
+}
+
+/* Password Input Styling */
+div[data-baseweb="input"] input[type="password"] {
+    color: #ffffff !important;
     background-color: rgba(1, 1, 43, 0.7) !important;
+    border-color: var(--primary-color) !important;
+}
+
+/* Error Message Styling */
+.stAlert {
+    color: var(--primary-color) !important;
+    background-color: rgba(255, 42, 109, 0.1) !important;
+    border-color: var(--primary-color) !important;
 }
 
 /* Tab styling */
@@ -329,15 +350,6 @@
     border-radius: 15px;
     border: 1px solid var(--primary-color);
     box-shadow: 0 0 20px rgba(255, 42, 109, 0.2);
-}
-
-/* Style form inputs */
-.stTextInput > div > div > input,
-.stTextInput > div > div > textarea {
-    color: var(--text-light) !important;
-    background-color: rgba(0, 0, 0, 0.2) !important;
-    border: 1px solid var(--primary-color) !important;
-    border-radius: 5px !important;
 }
 
 /* Style checkboxes */
