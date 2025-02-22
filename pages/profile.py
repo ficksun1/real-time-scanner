@@ -4,6 +4,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
 from auth import DatabaseManager
+from file_manager import FileManager
 
 def init_style():
     """Initialize custom styling"""
@@ -211,6 +212,22 @@ def display_profile():
                 """, unsafe_allow_html=True)
     else:
         st.info("No scan history available")
+
+    # Add report generation section
+    st.subheader("Reports")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if st.button("Generate Excel Report"):
+            file_manager = FileManager(st.session_state.username)
+            excel_path = file_manager.save_scan_excel(scan_history[-1], "latest")
+            st.success(f"Excel report generated: {excel_path}")
+    
+    with col2:
+        if st.button("Generate Word Report"):
+            file_manager = FileManager(st.session_state.username)
+            word_path = file_manager.generate_user_report(scan_history)
+            st.success(f"Word report generated: {word_path}")
 
     # Add to CSS
     st.markdown("""

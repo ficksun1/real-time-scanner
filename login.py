@@ -2,6 +2,7 @@ import streamlit as st
 import extra_streamlit_components as stx
 from auth import AuthManager, DatabaseManager
 from datetime import datetime, timedelta
+from file_manager import FileManager
 
 # Move this outside of any function, at the very top of your script
 st.set_page_config(
@@ -146,6 +147,11 @@ def handle_login(username, password, remember_me, auth_manager, cookie_manager):
         st.session_state.user_id = user['id']
         st.session_state.username = user['username']
         st.session_state.logged_in = True
+        
+        # Create user directory
+        file_manager = FileManager(username)
+        file_manager.setup_directories()
+        
         st.success("Login successful!")
         st.rerun()
     else:
