@@ -103,24 +103,19 @@ def login_page():
                     handle_registration(new_username, new_email, new_password, 
                                      confirm_password, terms, auth_manager)
 
-        # Footer with links
+        # Footer with single link
         st.markdown("---")
         
-        # Center-align the copyright and links
-        st.markdown(
-            "<div style='text-align: center; color: #d1f7ff;'>"
-            "© 2025 Network Scanner. All rights reserved.</div>",
-            unsafe_allow_html=True
-        )
-        
-        # Create centered links
-        col1, col2, col3 = st.columns([2,1,2])
+        # Center-align copyright and single link
+        col1, col2, col3 = st.columns([1,2,1])
         with col2:
-            if st.button("Privacy Policy", key="privacy_link", use_container_width=True):
+            st.markdown(
+                "<div style='text-align: center; color: #d1f7ff;'>"
+                "© 2025 Network Scanner. All rights reserved.</div>",
+                unsafe_allow_html=True
+            )
+            if st.button("Privacy Policy & Terms", key="privacy_btn", use_container_width=False):
                 st.switch_page("pages/privacy_policy.py")
-            st.write("")  # Add some spacing
-            if st.button("Terms of Service", key="terms_link", use_container_width=True):
-                st.switch_page("pages/terms.py")
 
         if st.session_state.logged_in:
             st.switch_page("pages/scanner.py")
@@ -132,9 +127,6 @@ def login_page():
         if st.session_state.nav == 'privacy':
             st.session_state.nav = None
             st.switch_page("pages/privacy_policy.py")
-        elif st.session_state.nav == 'terms':
-            st.session_state.nav = None
-            st.switch_page("pages/terms.py")
 
 def handle_login(username, password, remember_me, auth_manager, cookie_manager):
     if not username or not password:

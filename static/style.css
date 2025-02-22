@@ -483,4 +483,23 @@ div[data-testid="stHorizontalBlock"] button::after {
 .stMarkdown a:hover:after {
     transform: scaleX(1);
     transform-origin: bottom left;
+}
+
+/* Style the privacy policy button to look like a link */
+[data-testid="baseButton-secondary"] {
+    background: none !important;
+    border: none !important;
+    color: #05d9e8 !important;
+    font-size: 0.9em !important;
+    padding: 0 !important;
+    margin-top: 10px !important;
+    min-height: 0 !important;
+    text-decoration: none !important;
+    transition: all 0.3s ease !important;
+}
+
+[data-testid="baseButton-secondary"]:hover {
+    color: var(--primary-color) !important;
+    text-shadow: 0 0 8px var(--primary-color) !important;
+    background: none !important;
 } 
