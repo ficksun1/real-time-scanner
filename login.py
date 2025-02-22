@@ -103,18 +103,20 @@ def login_page():
                     handle_registration(new_username, new_email, new_password, 
                                      confirm_password, terms, auth_manager)
 
-        # Footer with single link
+        # Footer with single line
         st.markdown("---")
         
-        # Center-align copyright and single link
+        # Create a single line with copyright and link
         col1, col2, col3 = st.columns([1,2,1])
         with col2:
             st.markdown(
-                "<div style='text-align: center; color: #d1f7ff;'>"
-                "© 2025 Network Scanner. All rights reserved.</div>",
+                "<div style='display: flex; justify-content: center; align-items: center; gap: 20px;'>"
+                "<span style='color: #d1f7ff;'>© 2025 Network Scanner</span>"
+                "<span style='color: #d1f7ff;'>•</span>"
+                "</div>",
                 unsafe_allow_html=True
             )
-            if st.button("Privacy Policy & Terms", key="privacy_btn", use_container_width=False):
+            if st.button("Privacy Policy & Terms", key="privacy_btn", use_container_width=True, type="secondary"):
                 st.switch_page("pages/privacy_policy.py")
 
         if st.session_state.logged_in:

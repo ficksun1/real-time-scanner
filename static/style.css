@@ -492,14 +492,147 @@ div[data-testid="stHorizontalBlock"] button::after {
     color: #05d9e8 !important;
     font-size: 0.9em !important;
     padding: 0 !important;
-    margin-top: 10px !important;
+    margin: -25px auto 0 !important;  /* Negative margin to move it up */
     min-height: 0 !important;
     text-decoration: none !important;
     transition: all 0.3s ease !important;
+    display: inline-block !important;
+    text-align: center !important;
+    width: auto !important;
 }
 
 [data-testid="baseButton-secondary"]:hover {
     color: var(--primary-color) !important;
     text-shadow: 0 0 8px var(--primary-color) !important;
     background: none !important;
+}
+
+/* Privacy Policy Page Styling */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 30px;
+    background-color: transparent;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--primary-color);
+}
+
+.stTabs [data-baseweb="tab"] {
+    color: var(--text-light) !important;
+    background-color: transparent !important;
+    border: none !important;
+    padding: 10px 20px !important;
+    font-family: 'Orbitron', sans-serif !important;
+    transition: all 0.3s ease;
+}
+
+.stTabs [aria-selected="true"] {
+    color: var(--primary-color) !important;
+    border-bottom: 2px solid var(--primary-color) !important;
+    text-shadow: 0 0 10px var(--primary-color);
+}
+
+/* Policy Content Styling */
+.policy-content {
+    background: rgba(1, 1, 43, 0.7);
+    border: 1px solid var(--primary-color);
+    border-radius: 15px;
+    padding: 2rem;
+    margin: 1rem 0;
+    box-shadow: 0 0 20px rgba(255, 42, 109, 0.2);
+}
+
+.policy-content h2 {
+    color: var(--primary-color);
+    font-family: 'Orbitron', sans-serif;
+    margin: 1.5rem 0 1rem;
+    text-shadow: 0 0 10px rgba(255, 42, 109, 0.3);
+}
+
+.policy-content p {
+    color: var(--text-light);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+.policy-content ul {
+    list-style-type: none;
+    padding-left: 1.5rem;
+    margin: 1rem 0;
+}
+
+.policy-content li {
+    color: var(--text-light);
+    margin: 0.5rem 0;
+    position: relative;
+}
+
+.policy-content li:before {
+    content: '•';
+    color: var(--secondary-color);
+    position: absolute;
+    left: -1.5rem;
+    text-shadow: 0 0 5px var(--secondary-color);
+}
+
+/* Back button styling */
+.stButton button[data-testid="baseButton-secondary"] {
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color)) !important;
+    border: none !important;
+    color: var(--text-light) !important;
+    padding: 0.5rem 1.5rem !important;
+    border-radius: 5px !important;
+    font-family: 'Orbitron', sans-serif !important;
+    transition: all 0.3s ease !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    margin-top: 2rem !important;
+}
+
+.stButton button[data-testid="baseButton-secondary"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(255, 42, 109, 0.4);
+}
+
+/* Privacy Policy Page Styling */
+[data-testid="stTitle"] {
+    color: var(--primary-color) !important;
+    font-size: 2.5em !important;
+    margin-bottom: 2rem !important;
+    text-shadow: 0 0 10px rgba(255, 42, 109, 0.3) !important;
+}
+
+[data-testid="stSubheader"] {
+    color: var(--secondary-color) !important;
+    font-size: 1.2em !important;
+    margin-top: 1.5rem !important;
+    margin-bottom: 0.5rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    text-shadow: 0 0 8px rgba(5, 217, 232, 0.3) !important;
+}
+
+.stMarkdown p {
+    color: var(--text-light) !important;
+    font-size: 0.95em !important;
+    line-height: 1.6 !important;
+    margin-bottom: 1rem !important;
+}
+
+.stMarkdown ul {
+    color: var(--text-light) !important;
+    font-size: 0.95em !important;
+    margin-left: 1.5rem !important;
+    margin-bottom: 1.5rem !important;
+}
+
+.stMarkdown li {
+    margin-bottom: 0.5rem !important;
+}
+
+[data-testid="stContainer"] {
+    background: rgba(1, 1, 43, 0.7) !important;
+    border: 1px solid var(--primary-color) !important;
+    border-radius: 15px !important;
+    padding: 2rem !important;
+    margin: 1rem 0 !important;
+    box-shadow: 0 0 20px rgba(255, 42, 109, 0.2) !important;
 } 

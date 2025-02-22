@@ -19,63 +19,61 @@ def privacy_and_terms():
     tab1, tab2 = st.tabs(["Privacy Policy", "Terms of Service"])
     
     with tab1:
-        st.markdown("""
-        <div class="policy-content">
-            <h2>1. Information We Collect</h2>
-            <p>We collect information that you provide directly to us, including:</p>
-            <ul>
-                <li>Account information (username, email)</li>
-                <li>Network scan data and results</li>
-                <li>System usage information</li>
-            </ul>
+        st.title("Privacy Policy", help=None)
+        
+        with st.container():
+            st.subheader("1. Information We Collect")
+            st.write("We collect information that you provide directly to us, including:")
+            st.markdown("""
+            - Account information (username, email)
+            - Network scan data and results
+            - System usage information
+            """)
 
-            <h2>2. How We Use Your Information</h2>
-            <p>We use the information we collect to:</p>
-            <ul>
-                <li>Provide and maintain our services</li>
-                <li>Monitor and analyze usage patterns</li>
-                <li>Protect against unauthorized access</li>
-            </ul>
+            st.subheader("2. How We Use Your Information")
+            st.write("We use the information we collect to:")
+            st.markdown("""
+            - Provide and maintain our services
+            - Monitor and analyze usage patterns
+            - Protect against unauthorized access
+            """)
 
-            <h2>3. Data Security</h2>
-            <p>We implement appropriate security measures to protect your information.</p>
+            st.subheader("3. Data Security")
+            st.write("We implement appropriate security measures to protect your information.")
 
-            <h2>4. Contact Us</h2>
-            <p>If you have questions about this Privacy Policy, please contact us.</p>
-        </div>
-        """, unsafe_allow_html=True)
+            st.subheader("4. Contact Us")
+            st.write("If you have questions about this Privacy Policy, please contact us.")
     
     with tab2:
-        st.markdown("""
-        <div class="policy-content">
-            <h2>1. Acceptance of Terms</h2>
-            <p>By accessing our service, you agree to these terms and conditions.</p>
+        st.title("Terms of Service", help=None)
+        
+        with st.container():
+            st.subheader("1. Acceptance of Terms")
+            st.write("By accessing our service, you agree to these terms and conditions.")
 
-            <h2>2. Use License</h2>
-            <p>This tool should only be used on networks you own or have explicit permission to scan.</p>
+            st.subheader("2. Use License")
+            st.write("This tool should only be used on networks you own or have explicit permission to scan.")
 
-            <h2>3. Disclaimer</h2>
-            <ul>
-                <li>The service is provided "as is" without warranties</li>
-                <li>We are not responsible for any damages from use of the service</li>
-                <li>Network scanning should comply with all applicable laws</li>
-            </ul>
+            st.subheader("3. Disclaimer")
+            st.markdown("""
+            - The service is provided "as is" without warranties
+            - We are not responsible for any damages from use of the service
+            - Network scanning should comply with all applicable laws
+            """)
 
-            <h2>4. Limitations</h2>
-            <p>You agree not to:</p>
-            <ul>
-                <li>Use the service for illegal purposes</li>
-                <li>Scan networks without authorization</li>
-                <li>Attempt to breach or bypass security measures</li>
-            </ul>
+            st.subheader("4. Limitations")
+            st.write("You agree not to:")
+            st.markdown("""
+            - Use the service for illegal purposes
+            - Scan networks without authorization
+            - Attempt to breach or bypass security measures
+            """)
 
-            <h2>5. Governing Law</h2>
-            <p>These terms shall be governed by and construed in accordance with applicable laws.</p>
-        </div>
-        """, unsafe_allow_html=True)
+            st.subheader("5. Governing Law")
+            st.write("These terms shall be governed by and construed in accordance with applicable laws.")
     
     # Back button
-    if st.button("← Back to Login"):
+    if st.button("← Back to Login", key="back_btn", type="secondary"):
         st.switch_page("login.py")
 
 if __name__ == "__main__":
