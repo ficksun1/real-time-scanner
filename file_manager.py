@@ -70,12 +70,19 @@ class FileManager:
         
         # Recent scans
         doc.add_heading('Recent Scans', level=1)
-        for scan in scan_history[-5:]:  # Last 5 scans
-            doc.add_heading(f"Scan {scan['id']}", level=2)
+        for i, scan in enumerate(scan_history[-5:], 1):  # Last 5 scans
+            doc.add_heading(f"Scan #{i}", level=2)
             doc.add_paragraph(f"Time: {scan['scan_timestamp']}")
             doc.add_paragraph(f"IP: {scan['ip_address']}")
             doc.add_paragraph(f"Type: {scan['scan_type']}")
             doc.add_paragraph(f"Status: {scan['status']}")
+            if scan.get('ports'):
+                doc.add_paragraph(f"Ports: {scan['ports']}")
+            if scan.get('services'):
+                doc.add_paragraph(f"Services: {scan['services']}")
+            if scan.get('os_info'):
+                doc.add_paragraph(f"OS Info: {scan['os_info']}")
+            doc.add_paragraph("---")
             
         doc.save(filepath)
         return filepath 
