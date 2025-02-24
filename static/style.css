@@ -635,4 +635,97 @@ div[data-testid="stHorizontalBlock"] button::after {
     padding: 2rem !important;
     margin: 1rem 0 !important;
     box-shadow: 0 0 20px rgba(255, 42, 109, 0.2) !important;
+}
+
+/* Sidebar Styling */
+.sidebar-header {
+    padding: 1rem 0;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--secondary-color);
+}
+
+.sidebar-header h3 {
+    color: var(--primary-color);
+    font-family: 'Orbitron', sans-serif;
+    text-align: center;
+    margin: 0;
+}
+
+/* Scan Configuration Card */
+.scan-config-card {
+    background: rgba(1, 1, 43, 0.7);
+    border: 1px solid var(--primary-color);
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.scan-config-card h3 {
+    color: var(--secondary-color);
+    margin-bottom: 1rem;
+    font-family: 'Orbitron', sans-serif;
+}
+
+/* Input Fields */
+.stTextInput input {
+    background: rgba(1, 1, 43, 0.7) !important;
+    border: 1px solid var(--secondary-color) !important;
+    color: var(--text-light) !important;
+    border-radius: 8px !important;
+}
+
+.stSelectbox select {
+    background: rgba(1, 1, 43, 0.7) !important;
+    border: 1px solid var(--secondary-color) !important;
+    color: var(--text-light) !important;
+    border-radius: 8px !important;
+}
+
+/* Tabs Styling */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 30px;
+    background-color: transparent;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--primary-color);
+}
+
+.stTabs [data-baseweb="tab"] {
+    color: var(--text-light) !important;
+    background-color: transparent !important;
+    border: none !important;
+    padding: 10px 20px !important;
+    font-family: 'Orbitron', sans-serif !important;
+}
+
+.stTabs [aria-selected="true"] {
+    color: var(--primary-color) !important;
+    border-bottom: 2px solid var(--primary-color) !important;
+}
+
+/* Results Display */
+.results-container {
+    background: rgba(1, 1, 43, 0.7);
+    border: 1px solid var(--secondary-color);
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+}
+
+/* Button Styling */
+.stButton button {
+    font-family: 'Orbitron', sans-serif !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+}
+
+.sidebar .stButton button {
+    background: transparent !important;
+    border: 1px solid var(--secondary-color) !important;
+    color: var(--text-light) !important;
+    margin: 0.25rem 0 !important;
+}
+
+.sidebar .stButton button:hover {
+    background: rgba(255, 42, 109, 0.1) !important;
+    transform: translateX(5px);
 } 
