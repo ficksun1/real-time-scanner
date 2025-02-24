@@ -162,6 +162,8 @@ def create_sidebar():
         start_scan = st.button("Start Scan", type="primary")
         
         st.markdown("---")
+        if st.button("📚 Documentation", key="docs"):
+            st.switch_page("pages/documentation.py")
         if st.button("👤 Profile", key="profile"):
             st.switch_page("pages/profile.py")
         if st.button("🚪 Logout", key="logout"):
