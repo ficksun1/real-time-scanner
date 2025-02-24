@@ -162,10 +162,26 @@ def create_sidebar():
         start_scan = st.button("Start Scan", type="primary")
         
         st.markdown("---")
+        st.markdown("### Navigation")
+        
+        if st.button("🔍 Scanner", key="scanner"):
+            st.switch_page("pages/scanner.py")
+        
         if st.button("📚 Documentation", key="docs"):
             st.switch_page("pages/documentation.py")
+            
+        if st.button("🛡️ Security Tips", key="tips"):
+            st.switch_page("pages/security_tips.py")
+            
+        if st.button("🔧 Network Tools", key="tools"):
+            st.switch_page("pages/network_tools.py")
+            
+        if st.button("📋 Vulnerabilities", key="vulns"):
+            st.switch_page("pages/vulnerabilities.py")
+            
         if st.button("👤 Profile", key="profile"):
             st.switch_page("pages/profile.py")
+            
         if st.button("🚪 Logout", key="logout"):
             handle_logout()
             

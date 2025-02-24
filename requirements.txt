@@ -96,4 +96,5 @@ colorama==0.4.6                      # Colored terminal output
 # This will install only required packages
 
 python-docx==1.0.1
-openpyxl==3.1.2 
+openpyxl==3.1.2
+python-whois==0.7.3 
