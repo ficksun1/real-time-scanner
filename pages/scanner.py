@@ -20,7 +20,7 @@ def init_style():
     """Initialize custom styling"""
     with open('static/style.css') as f:
         st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
-    
+
     # Add header directly instead of reading from file
     st.markdown("""
         <div class="main-header">
@@ -56,7 +56,7 @@ def create_menu():
         st.markdown("---")
         if st.button("🚪 Logout", use_container_width=True, key="logout"):
             handle_logout()
-
+            
 def get_local_ip():
     """Get the local IP address of the machine"""
     try:
@@ -83,7 +83,7 @@ def get_scan_inputs():
             placeholder="e.g., 192.168.1.1 or 192.168.1.0/24",
             help="Enter a single IP or IP range in CIDR notation"
         )
-    
+        
     with col2:
         scan_type = st.selectbox(
             "Scan Type",
@@ -213,7 +213,7 @@ def check_common_vulnerabilities(ports):
 def save_scan_results(results, target, scan_type):
     """Save scan results to database"""
     if 'user_id' not in st.session_state:
-        return
+            return
     
     db = DatabaseManager()
     for host_info in results:

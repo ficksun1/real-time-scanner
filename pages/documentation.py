@@ -13,7 +13,7 @@ def display_documentation():
     # Introduction
     st.markdown("""
     <div class='doc-section'>
-        <h2>Understanding Network Scanning</h2>
+        <h1>Understanding Network Scanning</h1>
         <p>
         Network scanning is a crucial component of cybersecurity that helps identify potential vulnerabilities
         and ensure the security of your network infrastructure. This guide explains different types of scans
@@ -116,7 +116,7 @@ def display_documentation():
     st.subheader("Best Practices")
     st.markdown("""
     <div class='best-practices-card'>
-        <h3>Scanning Best Practices</h3>
+        <h1>Scanning Best Practices</h1>
         <ul>
             <li>Always obtain proper authorization before scanning networks</li>
             <li>Schedule intensive scans during off-peak hours</li>

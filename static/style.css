@@ -18,6 +18,22 @@
     font-family: 'Orbitron', sans-serif;
 }
 
+/* Heading Styles */
+h1 {
+    font-size: 1.2em; /* Smaller main heading */
+    margin: 1rem 0;
+}
+
+h2 {
+    font-size: 1.1em; /* Smaller subheading */
+    margin: 0.75rem 0;
+}
+
+h3 {
+    font-size: 1.0em; /* Smaller tertiary heading */
+    margin: 0.5rem 0;
+}
+
 /* Glitch Effect */
 @keyframes glitch {
     0% { text-shadow: 0.05em 0 0 var(--primary-color), -0.05em -0.025em 0 var(--secondary-color); }
