@@ -8,6 +8,7 @@ import queue
 import ipaddress
 from auth import DatabaseManager  # Add this import
 from file_manager import FileManager
+from pages.nmap_commands import display_nmap_commands  # Import the function
 
 # Page configuration
 st.set_page_config(
@@ -309,49 +310,73 @@ def display_results(results):
                 
                 st.info("Note: These are potential vulnerabilities based on open ports. Further testing is recommended.")
 
+def create_dropdown_menu():
+    """Create a dropdown menu for navigation"""
+    menu_options = [
+        "Scanner",
+        "Documentation",
+        "Security Tips",
+        "Network Tools",
+        "Vulnerabilities",
+        "Profile",
+        "Report Templates",
+        "Nmap Commands"  # Add the new page here
+    ]
+    
+    selected_page = st.selectbox("Select a Page", menu_options)
+    
+    return selected_page
+
 def main():
     init_style()
     create_menu()
     
+    # Initialize session state variables if they don't exist
     if 'is_scanning' not in st.session_state:
         st.session_state.is_scanning = False
     
     if 'scan_results' not in st.session_state:
         st.session_state.scan_results = []
     
-    # Main content area
-    with st.container():
-        tab1, tab2 = st.tabs(["🎯 Scanner", "📊 Results"])
-        
-        with tab1:
-            if not st.session_state.is_scanning:
-                target, scan_type, start_scan = get_scan_inputs()
-                
-                if start_scan:
-                    st.session_state.is_scanning = True
-                    result_queue = queue.Queue()
+    selected_page = create_dropdown_menu()
+    
+    if selected_page == "Scanner":
+        # Existing scanner code...
+        with st.container():
+            tab1, tab2 = st.tabs(["🎯 Scanner", "📊 Results"])
+            
+            with tab1:
+                if not st.session_state.is_scanning:
+                    target, scan_type, start_scan = get_scan_inputs()
                     
-                    with st.spinner("🔍 Scanning in progress..."):
-                        scan_thread = threading.Thread(
-                            target=perform_scan,
-                            args=(target, scan_type, result_queue)
-                        )
-                        scan_thread.start()
+                    if start_scan:
+                        st.session_state.is_scanning = True
+                        result_queue = queue.Queue()
                         
-                        try:
-                            results = result_queue.get(timeout=300)
-                            st.session_state.scan_results = results
-                            handle_scan(target, scan_type, results)
-                        except queue.Empty:
-                            st.error("⚠️ Scan timed out")
-                    
-                    st.session_state.is_scanning = False
-        
-        with tab2:
-            if st.session_state.scan_results:
-                display_results(st.session_state.scan_results)
-            else:
-                st.info("No scan results available yet. Run a scan to see results here.")
+                        with st.spinner("🔍 Scanning in progress..."):
+                            scan_thread = threading.Thread(
+                                target=perform_scan,
+                                args=(target, scan_type, result_queue)
+                            )
+                            scan_thread.start()
+                            
+                            try:
+                                results = result_queue.get(timeout=300)
+                                st.session_state.scan_results = results
+                                handle_scan(target, scan_type, results)
+                            except queue.Empty:
+                                st.error("⚠️ Scan timed out")
+                        
+                        st.session_state.is_scanning = False
+            
+            with tab2:
+                if st.session_state.scan_results:
+                    display_results(st.session_state.scan_results)
+                else:
+                    st.info("No scan results available yet. Run a scan to see results here.")
+    elif selected_page == "Nmap Commands":
+        display_nmap_commands()  # Call the new function to display Nmap commands
+    # Handle other pages similarly...
 
 if __name__ == "__main__":
     main()
