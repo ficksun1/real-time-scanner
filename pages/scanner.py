@@ -30,34 +30,16 @@ def init_style():
         </div>
     """, unsafe_allow_html=True)
 
-def create_menu():
-    with st.sidebar:
-        st.markdown("""
-        <div class='sidebar-header'>
-            <h3>🔐 Network Scanner</h3>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Navigation Menu
-        st.markdown("### 📌 Navigation")
-        
-        menu_items = {
-            "🔍 Scanner": "scanner",
-            "📚 Documentation": "documentation",
-            "🛡️ Security Tips": "security_tips",
-            "🔧 Network Tools": "network_tools",
-            "📋 Vulnerabilities": "vulnerabilities",
-            "👤 Profile": "profile"
-        }
-        
-        for label, page in menu_items.items():
-            if st.button(label, use_container_width=True, key=f"menu_{page}"):
-                st.switch_page(f"pages/{page}.py")
-        
-        st.markdown("---")
-        if st.button("🚪 Logout", use_container_width=True, key="logout"):
-            handle_logout()
-            
+def handle_logout():
+    """Handle user logout"""
+    # Clear session state
+    for key in ['logged_in', 'username', 'user_id', 'token']:
+        if key in st.session_state:
+            del st.session_state[key]
+    
+    # Redirect to login page
+    st.switch_page("login.py")
+
 def get_local_ip():
     """Get the local IP address of the machine"""
     try:
@@ -127,11 +109,11 @@ def validate_ip_range(ip_range):
 def perform_scan(target, scan_type, result_queue):
     """Perform the network scan with enhanced accuracy"""
     try:
+        # Move all Streamlit commands (st.*) outside this function
         nm = nmap.PortScanner()
         
         # Define scan arguments based on scan type
         if scan_type == "Automatic Network Scan":
-            # First do a fast ping sweep to find active hosts
             args = "-sn -T4"  # Fast ping scan
             nm.scan(hosts=target, arguments=args)
             
@@ -141,8 +123,7 @@ def perform_scan(target, scan_type, result_queue):
             results = []
             # Now scan each active host for more details
             for host in active_hosts:
-                # Perform a focused scan on the active host
-                service_args = "-sV -sS -F -O --version-intensity 5"  # Balanced scan for services and OS
+                service_args = "-sV -sS -F -O --version-intensity 5"
                 try:
                     nm.scan(hosts=host, arguments=service_args)
                     
@@ -186,15 +167,15 @@ def perform_scan(target, scan_type, result_queue):
                     results.append(host_info)
                     
                 except Exception as e:
-                    st.warning(f"Could not get detailed information for host {host}: {str(e)}")
-                    # Add basic host information even if detailed scan fails
+                    # Don't use st.warning here, instead pass the warning in results
                     results.append({
                         'IP Address': host,
                         'Status': 'up',
                         'Hostname': 'N/A',
                         'Ports': [],
                         'Services': [],
-                        'OS': 'Unknown'
+                        'OS': 'Unknown',
+                        'warning': f"Could not get detailed information: {str(e)}"
                     })
             
             result_queue.put(results)
@@ -251,8 +232,7 @@ def perform_scan(target, scan_type, result_queue):
             result_queue.put(results)
             
     except Exception as e:
-        error_msg = f"Error during scan: {str(e)}"
-        result_queue.put(error_msg)
+        result_queue.put(f"Error during scan: {str(e)}")
 
 def check_common_vulnerabilities(ports):
     """Check for common vulnerabilities based on open ports"""
@@ -290,16 +270,6 @@ def save_scan_results(results, target, scan_type):
             scan_type,
             host_info
         )
-
-def handle_logout():
-    """Handle user logout"""
-    # Clear session state
-    for key in ['logged_in', 'username', 'user_id', 'token']:
-        if key in st.session_state:
-            del st.session_state[key]
-    
-    # Redirect to login page
-    st.switch_page("login.py")
 
 def handle_scan(target, scan_type, results):
     """Handle scan execution and saving results"""
@@ -430,7 +400,16 @@ def display_results(results):
 
 def main():
     init_style()
-    create_menu()
+    
+    # Add logout button to sidebar
+    with st.sidebar:
+        st.markdown("""
+        <div class='sidebar-header'>
+            <h3>🔐 Network Scanner</h3>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("🚪 Logout", use_container_width=True, key="logout"):
+            handle_logout()
     
     if 'is_scanning' not in st.session_state:
         st.session_state.is_scanning = False
@@ -452,14 +431,9 @@ def main():
                     
                     with st.spinner("🔍 Scanning in progress..."):
                         if scan_type == "Automatic Network Scan":
-                            st.info("Discovering hosts in your network. This may take a few minutes...")
-                            progress_bar = st.progress(0)
+                            progress_placeholder = st.empty()
+                            progress_bar = progress_placeholder.progress(0)
                             
-                            # Simple progress indication
-                            for i in range(100):
-                                time.sleep(0.1)
-                                progress_bar.progress(i + 1)
-                        
                         scan_thread = threading.Thread(
                             target=perform_scan,
                             args=(target, scan_type, result_queue)
@@ -470,12 +444,16 @@ def main():
                         try:
                             results = result_queue.get(timeout=300)
                             if scan_type == "Automatic Network Scan":
-                                progress_bar.empty()
+                                progress_placeholder.empty()
                             
                             if isinstance(results, str) and "Error" in results:
                                 st.error(results)
                                 st.session_state.scan_results = []
                             else:
+                                # Handle any warnings from the scan
+                                for result in results:
+                                    if 'warning' in result:
+                                        st.warning(result['warning'])
                                 st.session_state.scan_results = results
                                 handle_scan(target, scan_type, results)
                         except queue.Empty:
