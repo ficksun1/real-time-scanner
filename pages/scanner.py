@@ -8,6 +8,7 @@ import queue
 import ipaddress
 from auth import DatabaseManager  # Add this import
 from file_manager import FileManager
+import time
 
 # Page configuration
 st.set_page_config(
@@ -77,19 +78,24 @@ def get_scan_inputs():
     
     col1, col2 = st.columns(2)
     
-    with col1:
-        target = st.text_input(
-            "Target IP/Range",
-            placeholder="e.g., 192.168.1.1 or 192.168.1.0/24",
-            help="Enter a single IP or IP range in CIDR notation"
-        )
-        
     with col2:
         scan_type = st.selectbox(
             "Scan Type",
-            ["Quick Scan", "Full Port Scan", "OS Detection", "Service Detection"],
+            ["Automatic Network Scan", "Full Port Scan", "OS Detection", "Service Detection"],
             help="Select the type of scan to perform"
         )
+    
+    with col1:
+        if scan_type == "Automatic Network Scan":
+            st.info("Automatic scan will detect and scan all hosts in your network")
+            target = f"{get_local_ip().rsplit('.', 1)[0]}.0/24"  # Automatically set to local subnet
+            st.text(f"Target network: {target}")
+        else:
+            target = st.text_input(
+                "Target IP/Range",
+                placeholder="e.g., 192.168.1.1 or 192.168.1.0/24",
+                help="Enter a single IP or IP range in CIDR notation"
+            )
     
     # Start scan button with custom styling
     col1, col2, col3 = st.columns([2,1,2])
@@ -124,68 +130,129 @@ def perform_scan(target, scan_type, result_queue):
         nm = nmap.PortScanner()
         
         # Define scan arguments based on scan type
-        if scan_type == "Quick Scan":
+        if scan_type == "Automatic Network Scan":
+            # First do a fast ping sweep to find active hosts
             args = "-sn -T4"  # Fast ping scan
-        elif scan_type == "Full Port Scan":
-            args = "-sS -T4 -p- -Pn"  # SYN scan on all ports, treat hosts as online
-        elif scan_type == "OS Detection":
-            args = "-sS -O -T4 -Pn"  # OS detection with SYN scan
-        else:  # Service Detection
-            args = "-sV -T4 -Pn -sS"  # Version detection with SYN scan
-        
-        # Add common options for better accuracy
-        args += " --min-rate=1000 --max-retries=2"
-        
-        # Perform the scan
-        st.info(f"Starting {scan_type} on {target}...")
-        nm.scan(hosts=target, arguments=args)
-        
-        results = []
-        for host in nm.all_hosts():
-            host_info = {
-                'IP Address': host,
-                'Status': nm[host].state(),
-                'Hostname': nm[host].hostname() if nm[host].hostname() else 'N/A',
-                'Ports': [],
-                'Services': [],
-                'OS': 'Unknown'
-            }
+            nm.scan(hosts=target, arguments=args)
             
-            # Get OS information if available
-            if 'osmatch' in nm[host] and nm[host]['osmatch']:
-                os_matches = nm[host]['osmatch']
-                if os_matches and len(os_matches) > 0:
-                    best_match = os_matches[0]
-                    host_info['OS'] = f"{best_match['name']} ({best_match['accuracy']}% accuracy)"
+            # Get all active hosts
+            active_hosts = [host for host in nm.all_hosts() if nm[host].state() == 'up']
             
-            # Get port and service information
-            if 'tcp' in nm[host]:
-                for port, port_info in nm[host]['tcp'].items():
-                    if port_info['state'] == 'open':
-                        host_info['Ports'].append(port)
-                        
-                        # Enhanced service information
-                        service_info = []
-                        if port_info['name'] != 'unknown':
-                            service_info.append(port_info['name'])
-                        if 'product' in port_info and port_info['product']:
-                            service_info.append(port_info['product'])
-                        if 'version' in port_info and port_info['version']:
-                            service_info.append(f"v{port_info['version']}")
-                        
-                        service_str = f"Port {port}: {' - '.join(service_info)}"
-                        host_info['Services'].append(service_str)
+            results = []
+            # Now scan each active host for more details
+            for host in active_hosts:
+                # Perform a focused scan on the active host
+                service_args = "-sV -sS -F -O --version-intensity 5"  # Balanced scan for services and OS
+                try:
+                    nm.scan(hosts=host, arguments=service_args)
+                    
+                    host_info = {
+                        'IP Address': host,
+                        'Status': 'up',
+                        'Hostname': nm[host].hostname() if nm[host].hostname() else 'N/A',
+                        'Ports': [],
+                        'Services': [],
+                        'OS': 'Unknown'
+                    }
+                    
+                    # Get OS information
+                    if 'osmatch' in nm[host] and nm[host]['osmatch']:
+                        os_matches = nm[host]['osmatch']
+                        if os_matches and len(os_matches) > 0:
+                            best_match = os_matches[0]
+                            host_info['OS'] = f"{best_match['name']} ({best_match['accuracy']}% accuracy)"
+                    
+                    # Get port and service information
+                    if 'tcp' in nm[host]:
+                        for port, port_info in nm[host]['tcp'].items():
+                            if port_info['state'] == 'open':
+                                host_info['Ports'].append(port)
+                                
+                                service_info = []
+                                if port_info['name'] != 'unknown':
+                                    service_info.append(port_info['name'])
+                                if 'product' in port_info and port_info['product']:
+                                    service_info.append(port_info['product'])
+                                if 'version' in port_info and port_info['version']:
+                                    service_info.append(f"v{port_info['version']}")
+                                
+                                service_str = f"Port {port}: {' - '.join(service_info)}"
+                                host_info['Services'].append(service_str)
+                    
+                    # Add vulnerability checks
+                    if host_info['Ports']:
+                        host_info['Vulnerabilities'] = check_common_vulnerabilities(host_info['Ports'])
+                    
+                    results.append(host_info)
+                    
+                except Exception as e:
+                    st.warning(f"Could not get detailed information for host {host}: {str(e)}")
+                    # Add basic host information even if detailed scan fails
+                    results.append({
+                        'IP Address': host,
+                        'Status': 'up',
+                        'Hostname': 'N/A',
+                        'Ports': [],
+                        'Services': [],
+                        'OS': 'Unknown'
+                    })
             
-            # Add vulnerability checks for common ports
-            if host_info['Ports']:
-                host_info['Vulnerabilities'] = check_common_vulnerabilities(host_info['Ports'])
+            result_queue.put(results)
             
-            results.append(host_info)
-        
-        result_queue.put(results)
-        
+        else:
+            # Original scan logic for other scan types
+            args = {
+                "Full Port Scan": "-sS -T4 -p- -Pn",
+                "OS Detection": "-sS -O -T4 -Pn",
+                "Service Detection": "-sV -T4 -Pn -sS"
+            }[scan_type]
+            
+            args += " --min-rate=1000 --max-retries=2"
+            nm.scan(hosts=target, arguments=args)
+            
+            results = []
+            for host in nm.all_hosts():
+                host_info = {
+                    'IP Address': host,
+                    'Status': nm[host].state(),
+                    'Hostname': nm[host].hostname() if nm[host].hostname() else 'N/A',
+                    'Ports': [],
+                    'Services': [],
+                    'OS': 'Unknown'
+                }
+                
+                # Rest of the original scanning logic...
+                if 'osmatch' in nm[host] and nm[host]['osmatch']:
+                    os_matches = nm[host]['osmatch']
+                    if os_matches and len(os_matches) > 0:
+                        best_match = os_matches[0]
+                        host_info['OS'] = f"{best_match['name']} ({best_match['accuracy']}% accuracy)"
+                
+                if 'tcp' in nm[host]:
+                    for port, port_info in nm[host]['tcp'].items():
+                        if port_info['state'] == 'open':
+                            host_info['Ports'].append(port)
+                            service_info = []
+                            if port_info['name'] != 'unknown':
+                                service_info.append(port_info['name'])
+                            if 'product' in port_info and port_info['product']:
+                                service_info.append(port_info['product'])
+                            if 'version' in port_info and port_info['version']:
+                                service_info.append(f"v{port_info['version']}")
+                            
+                            service_str = f"Port {port}: {' - '.join(service_info)}"
+                            host_info['Services'].append(service_str)
+                
+                if host_info['Ports']:
+                    host_info['Vulnerabilities'] = check_common_vulnerabilities(host_info['Ports'])
+                
+                results.append(host_info)
+            
+            result_queue.put(results)
+            
     except Exception as e:
-        result_queue.put(f"Error during scan: {str(e)}")
+        error_msg = f"Error during scan: {str(e)}"
+        result_queue.put(error_msg)
 
 def check_common_vulnerabilities(ports):
     """Check for common vulnerabilities based on open ports"""
@@ -243,6 +310,24 @@ def handle_scan(target, scan_type, results):
         if results and len(results) > 0:
             st.success("Scan completed successfully!")
             
+            # For Automatic Network Scan, show a summary first
+            if scan_type == "Automatic Network Scan":
+                online_hosts = [host for host in results if host['Status'] == 'up']
+                st.info(f"Found {len(online_hosts)} active hosts in your network")
+                
+                # Create a summary table
+                summary_data = []
+                for host in online_hosts:
+                    summary_data.append({
+                        "IP Address": host['IP Address'],
+                        "Hostname": host['Hostname'],
+                        "OS": host['OS'],
+                        "Open Ports": len(host['Ports'])
+                    })
+                
+                if summary_data:
+                    st.dataframe(summary_data)
+            
             for host in results:
                 scan_data = {
                     'scan_timestamp': datetime.now(),
@@ -275,15 +360,49 @@ def handle_scan(target, scan_type, results):
                         st.markdown("**🔧 Services:**")
                         for service in host['Services']:
                             st.markdown(f"- {service}")
+                    
+                    if 'Vulnerabilities' in host and host['Vulnerabilities']:
+                        st.markdown("**⚠️ Potential Vulnerabilities:**")
+                        for vuln in host['Vulnerabilities']:
+                            st.markdown(f"- {vuln}")
         else:
             st.warning("No hosts found in the specified range")
             
     except Exception as e:
         st.error(f"Error during scan: {str(e)}")
 
+def update_progress(progress_bar, progress_text, stages):
+    """Update progress bar using a thread-safe approach"""
+    # We'll use session state to communicate between threads
+    if 'progress_stage' not in st.session_state:
+        st.session_state.progress_stage = 0
+        st.session_state.progress_text = "Initializing network scan..."
+    
+    # This function will be called from the main thread
+    current_stage = st.session_state.progress_stage
+    if current_stage < len(stages):
+        progress = (current_stage + 1) / len(stages)
+        progress_bar.progress(progress)
+        progress_text.text(stages[current_stage])
+        st.session_state.progress_stage += 1
+        # Schedule the next update
+        if current_stage < len(stages) - 1:
+            time.sleep(3)  # Wait between stages
+            st.rerun()  # Trigger a rerun to update the progress
+
 def display_results(results):
     """Display enhanced scan results"""
+    # Check if results is an error message (string)
+    if isinstance(results, str):
+        st.error(f"Scan error: {results}")
+        return
+        
     for host in results:
+        # Ensure host is a dictionary before accessing its keys
+        if not isinstance(host, dict):
+            st.error(f"Invalid host data: {host}")
+            continue
+            
         with st.expander(f"🖥️ Host: {host['IP Address']} ({host['Status']})"):
             # Basic Information
             st.markdown("### 📌 Basic Information")
@@ -332,16 +451,33 @@ def main():
                     result_queue = queue.Queue()
                     
                     with st.spinner("🔍 Scanning in progress..."):
+                        if scan_type == "Automatic Network Scan":
+                            st.info("Discovering hosts in your network. This may take a few minutes...")
+                            progress_bar = st.progress(0)
+                            
+                            # Simple progress indication
+                            for i in range(100):
+                                time.sleep(0.1)
+                                progress_bar.progress(i + 1)
+                        
                         scan_thread = threading.Thread(
                             target=perform_scan,
                             args=(target, scan_type, result_queue)
                         )
+                        scan_thread.daemon = True
                         scan_thread.start()
                         
                         try:
                             results = result_queue.get(timeout=300)
-                            st.session_state.scan_results = results
-                            handle_scan(target, scan_type, results)
+                            if scan_type == "Automatic Network Scan":
+                                progress_bar.empty()
+                            
+                            if isinstance(results, str) and "Error" in results:
+                                st.error(results)
+                                st.session_state.scan_results = []
+                            else:
+                                st.session_state.scan_results = results
+                                handle_scan(target, scan_type, results)
                         except queue.Empty:
                             st.error("⚠️ Scan timed out")
                     
