@@ -22,13 +22,19 @@ def get_user_scan_history(user_id):
         cursor.execute('SELECT username, email, created_at FROM users WHERE id = %s', (user_id,))
         user_info = cursor.fetchone()
         
-        # Get scan history
+        # Get scan history with vulnerability data
         cursor.execute('''
-            SELECT scan_timestamp, scan_type, ip_address, status, 
-                   ports, services, os_info 
-            FROM packet_data 
-            WHERE user_id = %s 
-            ORDER BY scan_timestamp DESC
+            SELECT pd.scan_timestamp, pd.scan_type, pd.ip_address, pd.status, 
+                   pd.ports, pd.services, pd.os_info,
+                   COUNT(CASE WHEN v.severity = 'Critical' THEN 1 END) as critical_vulns,
+                   COUNT(CASE WHEN v.severity = 'High' THEN 1 END) as high_vulns,
+                   COUNT(CASE WHEN v.severity = 'Medium' THEN 1 END) as medium_vulns,
+                   COUNT(CASE WHEN v.severity = 'Low' THEN 1 END) as low_vulns
+            FROM packet_data pd
+            LEFT JOIN vulnerabilities v ON pd.id = v.scan_id
+            WHERE pd.user_id = %s 
+            GROUP BY pd.id
+            ORDER BY pd.scan_timestamp DESC
         ''', (user_id,))
         scan_history = cursor.fetchall()
         
@@ -40,7 +46,7 @@ def get_user_scan_history(user_id):
         return None, None
 
 def create_scan_metrics(scan_history):
-    """Create metrics from scan history"""
+    """Create enhanced metrics from scan history"""
     if not scan_history:
         return {}
     
@@ -48,18 +54,31 @@ def create_scan_metrics(scan_history):
     scan_types = {}
     vulnerable_ports = 0
     unique_ips = set()
+    severity_counts = {
+        'Critical': 0,
+        'High': 0,
+        'Medium': 0,
+        'Low': 0
+    }
     
     for scan in scan_history:
         scan_types[scan['scan_type']] = scan_types.get(scan['scan_type'], 0) + 1
         unique_ips.add(scan['ip_address'])
         if scan['ports']:
             vulnerable_ports += len(scan['ports'].split(','))
+        
+        # Add severity counts
+        severity_counts['Critical'] += scan['critical_vulns']
+        severity_counts['High'] += scan['high_vulns']
+        severity_counts['Medium'] += scan['medium_vulns']
+        severity_counts['Low'] += scan['low_vulns']
     
     return {
         'total_scans': total_scans,
         'unique_ips': len(unique_ips),
         'scan_types': scan_types,
-        'vulnerable_ports': vulnerable_ports
+        'vulnerable_ports': vulnerable_ports,
+        'severity_counts': severity_counts
     }
 
 def display_profile():
@@ -76,10 +95,11 @@ def display_profile():
         st.error("Could not fetch user information")
         return
     
-    # User Profile Header
+    # User Profile Header with Cyberpunk styling
     st.markdown("""
         <div class="profile-header">
-            <h1>User Profile</h1>
+            <h1>Security Dashboard</h1>
+            <div class="cyber-line"></div>
         </div>
     """, unsafe_allow_html=True)
     
@@ -95,19 +115,39 @@ def display_profile():
         </div>
         """, unsafe_allow_html=True)
     
-    # Scan Metrics
+    # Enhanced Metrics with Severity
     metrics = create_scan_metrics(scan_history)
     if metrics:
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
+        # Create two rows of metrics
+        row1_cols = st.columns(4)
+        with row1_cols[0]:
             st.metric("Total Scans", metrics['total_scans'])
-        with col2:
-            st.metric("Unique IPs Scanned", metrics['unique_ips'])
-        with col3:
-            st.metric("Vulnerable Ports Found", metrics['vulnerable_ports'])
-        with col4:
+        with row1_cols[1]:
+            st.metric("Unique IPs", metrics['unique_ips'])
+        with row1_cols[2]:
+            st.metric("Vulnerable Ports", metrics['vulnerable_ports'])
+        with row1_cols[3]:
             most_used_scan = max(metrics['scan_types'].items(), key=lambda x: x[1])[0]
             st.metric("Most Used Scan", most_used_scan)
+        
+        # Severity metrics
+        st.subheader("Vulnerability Severity Distribution")
+        severity_cols = st.columns(4)
+        severity_colors = {
+            'Critical': '#ff2a6d',
+            'High': '#ff71ce',
+            'Medium': '#05d9e8',
+            'Low': '#00ff9f'
+        }
+        
+        for i, (severity, count) in enumerate(metrics['severity_counts'].items()):
+            with severity_cols[i]:
+                st.markdown(f"""
+                <div style="background: rgba(1, 1, 43, 0.7); padding: 1rem; border-radius: 10px; border: 1px solid {severity_colors[severity]}">
+                    <h4 style="color: {severity_colors[severity]}">{severity}</h4>
+                    <h2 style="color: {severity_colors[severity]}">{count}</h2>
+                </div>
+                """, unsafe_allow_html=True)
     
     # Scan History Graphs
     if scan_history:
@@ -115,11 +155,12 @@ def display_profile():
         df = pd.DataFrame(scan_history)
         df['scan_timestamp'] = pd.to_datetime(df['scan_timestamp'])
         
-        # Scans Over Time
-        st.subheader("Scan Activity Over Time")
+        # Create tabs for different visualizations
+        tab1, tab2, tab3 = st.tabs(["Scan Activity", "Severity Analysis", "Protocol Distribution"])
         
-        # Create date range for x-axis
-        if len(df) > 0:
+        with tab1:
+            # Enhanced Scan Activity Timeline
+            st.subheader("Scan Activity Over Time")
             date_range = pd.date_range(
                 start=df['scan_timestamp'].min().date(),
                 end=df['scan_timestamp'].max().date()
@@ -138,69 +179,79 @@ def display_profile():
             ))
             
             fig_timeline.update_layout(
-                title="Daily Scan Activity",
                 template="plotly_dark",
                 plot_bgcolor='rgba(1, 1, 43, 0.7)',
                 paper_bgcolor='rgba(1, 1, 43, 0.7)',
                 font=dict(family="Orbitron", color="#d1f7ff"),
-                title_font=dict(family="Orbitron", color="#ff2a6d", size=24),
-                showlegend=False,
-                xaxis=dict(
-                    title="Date",
-                    showgrid=True,
-                    gridcolor='rgba(5, 217, 232, 0.2)',
-                    linecolor='rgba(5, 217, 232, 0.2)',
-                    tickformat='%Y-%m-%d'
-                ),
-                yaxis=dict(
-                    title="Number of Scans",
-                    showgrid=True,
-                    gridcolor='rgba(5, 217, 232, 0.2)',
-                    linecolor='rgba(5, 217, 232, 0.2)',
-                    tickmode='linear',
-                    tick0=0,
-                    dtick=1
-                ),
-                margin=dict(t=50, b=50, l=50, r=50),
-                height=400
+                showlegend=False
             )
             
             st.plotly_chart(fig_timeline, use_container_width=True)
+        
+        with tab2:
+            # Severity Distribution Over Time
+            st.subheader("Vulnerability Severity Trends")
+            severity_df = pd.DataFrame({
+                'Date': df['scan_timestamp'].dt.date,
+                'Critical': df['critical_vulns'],
+                'High': df['high_vulns'],
+                'Medium': df['medium_vulns'],
+                'Low': df['low_vulns']
+            })
             
-            # Scan Types Distribution
-            scan_type_counts = df['scan_type'].value_counts()
-            fig_types = go.Figure(data=[go.Pie(
-                labels=scan_type_counts.index,
-                values=scan_type_counts.values,
+            severity_df = severity_df.groupby('Date').sum()
+            
+            fig_severity = go.Figure()
+            for severity in ['Critical', 'High', 'Medium', 'Low']:
+                fig_severity.add_trace(go.Scatter(
+                    x=severity_df.index,
+                    y=severity_df[severity],
+                    name=severity,
+                    stackgroup='one',
+                    line=dict(width=0),
+                    fillcolor=severity_colors[severity]
+                ))
+            
+            fig_severity.update_layout(
+                template="plotly_dark",
+                plot_bgcolor='rgba(1, 1, 43, 0.7)',
+                paper_bgcolor='rgba(1, 1, 43, 0.7)',
+                font=dict(family="Orbitron", color="#d1f7ff")
+            )
+            
+            st.plotly_chart(fig_severity, use_container_width=True)
+        
+        with tab3:
+            # Protocol Distribution
+            st.subheader("Protocol Distribution")
+            protocols = df['scan_type'].value_counts()
+            
+            fig_protocols = go.Figure(data=[go.Pie(
+                labels=protocols.index,
+                values=protocols.values,
                 hole=.3,
                 marker=dict(colors=["#ff2a6d", "#05d9e8", "#ff71ce", "#00ff9f"])
             )])
             
-            fig_types.update_layout(
-                title="Scan Types Distribution",
+            fig_protocols.update_layout(
                 template="plotly_dark",
                 plot_bgcolor='rgba(1, 1, 43, 0.7)',
                 paper_bgcolor='rgba(1, 1, 43, 0.7)',
-                font=dict(family="Orbitron", color="#d1f7ff"),
-                title_font=dict(family="Orbitron", color="#ff2a6d", size=24),
-                showlegend=True,
-                legend=dict(
-                    font=dict(family="Orbitron", color="#d1f7ff"),
-                    bgcolor='rgba(1, 1, 43, 0.7)',
-                    bordercolor='rgba(5, 217, 232, 0.2)'
-                ),
-                margin=dict(t=50, b=50, l=50, r=50),
-                height=400
+                font=dict(family="Orbitron", color="#d1f7ff")
             )
             
-            st.plotly_chart(fig_types, use_container_width=True)
-        else:
-            st.info("No scan data available for visualization")
+            st.plotly_chart(fig_protocols, use_container_width=True)
         
-        # Recent Scans Table
+        # Recent Scans Table with Enhanced Styling
         st.subheader("Recent Scans")
         with st.expander("View Recent Scans", expanded=True):
-            for scan in scan_history[:5]:  # Show last 5 scans
+            for scan in scan_history[:5]:
+                severity_indicators = ""
+                if scan['critical_vulns'] > 0:
+                    severity_indicators += f"<span style='color: #ff2a6d'>⚠️ {scan['critical_vulns']} Critical</span> "
+                if scan['high_vulns'] > 0:
+                    severity_indicators += f"<span style='color: #ff71ce'>⚠️ {scan['high_vulns']} High</span> "
+                
                 st.markdown(f"""
                 <div class="scan-card">
                     <h4>Scan on {scan['scan_timestamp'].strftime('%Y-%m-%d %H:%M:%S')}</h4>
@@ -208,26 +259,37 @@ def display_profile():
                     <p><strong>Scan Type:</strong> {scan['scan_type']}</p>
                     <p><strong>Status:</strong> {scan['status']}</p>
                     <p><strong>Ports:</strong> {scan['ports'] if scan['ports'] else 'None'}</p>
+                    <p><strong>Vulnerabilities:</strong> {severity_indicators}</p>
                 </div>
                 """, unsafe_allow_html=True)
     else:
         st.info("No scan history available")
 
-    # Add report generation section
-    st.subheader("Reports")
-    col1, col2 = st.columns(2)
+    # Report Generation Section
+    st.subheader("Generate Reports")
+    report_col1, report_col2, report_col3 = st.columns(3)
     
-    with col1:
+    with report_col1:
         if st.button("Generate Excel Report"):
             file_manager = FileManager(st.session_state.username)
-            excel_path = file_manager.save_scan_excel(scan_history[-1], "latest")
+            excel_path = file_manager.save_scan_excel(scan_history[-1] if scan_history else {}, "latest")
             st.success(f"Excel report generated: {excel_path}")
     
-    with col2:
+    with report_col2:
         if st.button("Generate Word Report"):
             file_manager = FileManager(st.session_state.username)
             word_path = file_manager.generate_user_report(scan_history)
             st.success(f"Word report generated: {word_path}")
+    
+    with report_col3:
+        if st.button("Generate Network Monitor Report"):
+            if 'packet_data' in st.session_state:
+                file_manager = FileManager(st.session_state.username)
+                doc = create_network_monitor_report(st.session_state['packet_data'])
+                report_path = file_manager.save_report(doc, f"network_monitor_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
+                st.success(f"Network Monitor Report generated: {report_path}")
+            else:
+                st.warning("No network monitor data available")
 
     # Add to CSS
     st.markdown("""

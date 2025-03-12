@@ -30,7 +30,7 @@ class DatabaseManager:
                 )
             ''')
             
-            # Create packet_data table with correct columns (without dropping)
+            # Create packet_data table
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS packet_data (
                     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -44,6 +44,19 @@ class DatabaseManager:
                     services TEXT,
                     os_info VARCHAR(255),
                     FOREIGN KEY (user_id) REFERENCES users(id)
+                )
+            ''')
+            
+            # Create vulnerabilities table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS vulnerabilities (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    scan_id INT NOT NULL,
+                    vulnerability_name VARCHAR(255) NOT NULL,
+                    severity ENUM('Critical', 'High', 'Medium', 'Low') NOT NULL,
+                    description TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (scan_id) REFERENCES packet_data(id) ON DELETE CASCADE
                 )
             ''')
             
@@ -94,11 +107,12 @@ class DatabaseManager:
             return None
 
     def save_scan_result(self, user_id, target, scan_type, host_info):
-        """Save scan results to database"""
+        """Save scan results to database with vulnerability information"""
         try:
             conn = self.get_connection()
             cursor = conn.cursor()
             
+            # Insert scan data
             cursor.execute('''
                 INSERT INTO packet_data 
                 (user_id, ip_address, scan_type, status, hostname, ports, services, os_info)
@@ -109,10 +123,29 @@ class DatabaseManager:
                 scan_type,
                 host_info['Status'],
                 host_info['Hostname'],
-                ','.join(map(str, host_info['Ports'])),
-                ','.join(host_info['Services']),
+                ','.join(map(str, host_info['Ports'])) if host_info.get('Ports') else None,
+                ','.join(host_info['Services']) if host_info.get('Services') else None,
                 host_info['OS']
             ))
+            
+            scan_id = cursor.lastrowid
+            
+            # Save vulnerabilities if present
+            if host_info.get('Vulnerabilities'):
+                for vuln in host_info['Vulnerabilities']:
+                    # Determine severity based on vulnerability description
+                    severity = self.determine_vulnerability_severity(vuln)
+                    
+                    cursor.execute('''
+                        INSERT INTO vulnerabilities 
+                        (scan_id, vulnerability_name, severity, description)
+                        VALUES (%s, %s, %s, %s)
+                    ''', (
+                        scan_id,
+                        f"Vulnerability on port {vuln.split(':')[0]}" if ':' in vuln else "General Vulnerability",
+                        severity,
+                        vuln
+                    ))
             
             conn.commit()
             cursor.close()
@@ -121,6 +154,18 @@ class DatabaseManager:
         except Exception as e:
             print(f"Error saving scan result: {str(e)}")
             return False
+
+    def determine_vulnerability_severity(self, vuln_description):
+        """Determine vulnerability severity based on description"""
+        vuln_lower = vuln_description.lower()
+        if any(word in vuln_lower for word in ['critical', 'remote code execution', 'rce', 'arbitrary code']):
+            return 'Critical'
+        elif any(word in vuln_lower for word in ['high', 'privilege escalation', 'authentication bypass']):
+            return 'High'
+        elif any(word in vuln_lower for word in ['medium', 'information disclosure', 'denial of service']):
+            return 'Medium'
+        else:
+            return 'Low'
 
 class AuthManager:
     def __init__(self):
