@@ -8,7 +8,6 @@ import queue
 import ipaddress
 from auth import DatabaseManager  # Add this import
 from file_manager import FileManager
-import time
 
 # Page configuration
 st.set_page_config(
@@ -398,6 +397,23 @@ def display_results(results):
                 
                 st.info("Note: These are potential vulnerabilities based on open ports. Further testing is recommended.")
 
+def create_dropdown_menu():
+    """Create a dropdown menu for navigation"""
+    menu_options = [
+        "Scanner",
+        "Documentation",
+        "Security Tips",
+        "Network Tools",
+        "Vulnerabilities",
+        "Profile",
+        "Report Templates",
+        "Nmap Commands"  # Add the new page here
+    ]
+    
+    selected_page = st.selectbox("Select a Page", menu_options)
+    
+    return selected_page
+
 def main():
     init_style()
     
@@ -411,6 +427,7 @@ def main():
         if st.button("🚪 Logout", use_container_width=True, key="logout"):
             handle_logout()
     
+    # Initialize session state variables if they don't exist
     if 'is_scanning' not in st.session_state:
         st.session_state.is_scanning = False
     
@@ -430,32 +447,16 @@ def main():
                     result_queue = queue.Queue()
                     
                     with st.spinner("🔍 Scanning in progress..."):
-                        if scan_type == "Automatic Network Scan":
-                            progress_placeholder = st.empty()
-                            progress_bar = progress_placeholder.progress(0)
-                            
                         scan_thread = threading.Thread(
                             target=perform_scan,
                             args=(target, scan_type, result_queue)
                         )
-                        scan_thread.daemon = True
                         scan_thread.start()
                         
                         try:
                             results = result_queue.get(timeout=300)
-                            if scan_type == "Automatic Network Scan":
-                                progress_placeholder.empty()
-                            
-                            if isinstance(results, str) and "Error" in results:
-                                st.error(results)
-                                st.session_state.scan_results = []
-                            else:
-                                # Handle any warnings from the scan
-                                for result in results:
-                                    if 'warning' in result:
-                                        st.warning(result['warning'])
-                                st.session_state.scan_results = results
-                                handle_scan(target, scan_type, results)
+                            st.session_state.scan_results = results
+                            handle_scan(target, scan_type, results)
                         except queue.Empty:
                             st.error("⚠️ Scan timed out")
                     
